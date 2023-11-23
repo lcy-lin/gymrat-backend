@@ -1,0 +1,225 @@
+openapi: 3.0.0
+info:
+  title: Stylish API docs
+  version: 1.0.0
+tags:
+  - name: user
+    description: user related endpoints
+  - name: activites
+    description: activities related endpoints
+  
+paths:
+  /user/signup:
+    post:
+      tags:
+        - user
+      summary: sign up a user
+      parameters:
+        - name: Content-Type
+          in: header
+          required: true
+          schema:
+            type: string
+            example: application/json
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserSignUpRequest'
+      responses:
+        '200':
+          description: access_token, access_expired, and a user object
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Token'
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/UserResponse'
+        '409':
+          description: email already exists
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: email already exists
+        '400':
+          description: client error response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: error messages
+        '500':
+          description: server error response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: error message
+  /user/signin:
+    post:
+      tags:
+        - user
+      summary: sign in a user
+      parameters:
+        - name: Content-Type
+          in: header
+          required: true
+          schema:
+            type: string
+            example: application/json
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              oneOf:
+                - $ref: '#/components/schemas/UserSignInRequest1'
+                - $ref: '#/components/schemas/UserSignInRequest2'
+      responses:
+        '200':
+          description: access_token, access_expired, and a user object
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    $ref: '#/components/schemas/Token'
+                    type: object
+                    properties:
+                      user:
+                        $ref: '#/components/schemas/UserResponse'
+        '403':
+          description: sign in failed
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: email or password is incorrect
+        '400':
+          description: client error response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: error messages
+        '500':
+          description: server error response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: error message
+  /user/profile:
+    get:
+      tags:
+        - user
+      summary: get user profile
+      parameters:
+        - name: Authorization
+          in: header
+          required: true
+          schema:
+            type: string
+            description: access token preceding with Bearer
+            example: Bearer {access_token}
+
+      responses:
+        '200':
+          description: provider and a user
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  data:
+                    type: object
+                    properties:
+                      provider:
+                        type: string
+                        example: facebook
+                      name:
+                        type: string
+                        example: John
+                      email:
+                        type: string
+                        example: john@appworks.com
+                      picture:
+                        type: string
+                        example: https://stylish.com/picture.jpg
+        '401':
+          description: client error (no token) response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: token is required
+        '403':
+          description: client error (wrong token) response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: token is invalid
+        '500':
+          description: server error response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  error:
+                    type: string
+                    example: error message
+  /activities:
+    get:
+      tags:
+        - activites
+      summary: list all the activities
+      parameters:
+        - in: query
+          name: caetgory
+          schema:
+            type: string
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                paging:
+                  type: integer
+                  description: paging number
+                  example: 0
