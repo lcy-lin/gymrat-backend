@@ -52,70 +52,38 @@ class UserController {
             res.status(500).json({ error: 'Internal Server Error' });
         }
     }
-//     static async signIn(req, res) {
-//         const provider = req.body.provider;
-//         try {
-//             if (provider == 'native') {
-//                 const contentTypeHeader = req.get('Content-Type');
-//                 if (UserModel.userHeaderValidity(contentTypeHeader) == false) {
-//                     return res.status(400).json({ error: 'Client Error Response' });
-//                 }
-//                 const { provider, email, password } = req.body;
-//                 if(UserModel.checkNativeSignIn(email, password, provider) == false){
-//                     return res.status(400).json({ error: 'Client Error Response' });
-//                 }
-//                 const user = await UserModel.getUserByEmail(email);
-//                 if (user === null) {
-//                     return res.status(403).json({ error: 'Sign In Failed' });
-//                 }
-//                 const isPasswordValid = await UserModel.verifyPassword(password, user.password);
+    static async signIn(req, res) {
+        try {
+            const contentTypeHeader = req.get('Content-Type');
+            if (check.validJsonHeader(contentTypeHeader) == false) {
+                return res.status(400).json({ error: 'Client Error Response' });
+            }
+            const { email, password } = req.body;
+            if(email == null || password == null){
+                return res.status(400).json({ error: 'Client Error Response' });
+            }
+            const user = await UserModel.getUserByEmail(email);
+            if (user === null) {
+                return res.status(403).json({ error: 'Sign In Failed' });
+            }
+            const isPasswordValid = await UserModel.verifyPassword(password, user.password);
 
-//                 if (!isPasswordValid) {
-//                     return res.status(403).json({ error: 'Sign In Failed' });
-//                 }
-//                 const userData = {
-//                     id: user.id,
-//                     name: user.name,
-//                     email: user.email,
-//                     picture: user.picture,
-//                     provider: user.provider,
-//                 };
-//                 await UserController.respondWithToken(res, userData);
-//             }
-//             else if (provider == 'google') {
-//                 try{
-//                     const access_token = req.body.access_token;
-//                     const {data} = await axios.get('https://www.googleapis.com/oauth2/v1/userinfo?alt=json&access_token=' + access_token);
-//                     const tokenDetail = await axios.get('https://www.googleapis.com/oauth2/v1/tokeninfo?access_token=' + access_token);
-//                     const response = {
-//                         data: {
-//                             access_token: access_token,
-//                             access_expired: tokenDetail.data.expires_in,
-//                             user: {
-//                                 id: data.id,
-//                                 provider: 'google',
-//                                 name: data.name,
-//                                 email: data.email,
-//                                 picture: data.picture,
-//                             }
-//                         }
-//                     }
-//                     return res.status(200).json(response);
-//                 }
-//                 catch(error){
-//                     console.error(error);
-//                     return res.status(403).json({ error: 'Google Authentication Failed' });
-//                 }
-//             } 
-//             else {
-//                 return res.status(400).json({ error: 'Client Error Response' });
-//             } 
-//         }
-//         catch (error) {
-//             console.error(error);
-//             res.status(500).json({ error: 'Internal Server Error' });
-//         } 
-//     }
+            if (!isPasswordValid) {
+                return res.status(403).json({ error: 'Sign In Failed' });
+            }
+            const userData = {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                picture: user.picture,
+            };
+            await UserController.respondWithToken(res, userData);
+        }
+        catch (error) {
+            console.error(error);
+            res.status(500).json({ error: 'Internal Server Error' });
+        } 
+    }
 //     static async profile(req, res) {
 //         try{
 //             const authHeader = req.headers['authorization'];

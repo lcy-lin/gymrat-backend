@@ -27,6 +27,16 @@ class UserModel {
     }
     static async generateAccessToken(userData) {
         return jwt.sign(userData, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
-    } 
+    }
+    static async getUserByEmail(email){
+        const [rows] = await config.db.query('SELECT * FROM users WHERE email = ?', [email]);
+        if (rows.length === 0) {
+            return null;
+        }
+        return rows[0];
+    }
+    static async verifyPassword(password, storedPassword) {
+        return bcrypt.compare(password, storedPassword);
+    }
 }
 export default UserModel;
