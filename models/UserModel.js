@@ -41,6 +41,17 @@ class UserModel {
         }
         
     }
+    static async getUserById(id){
+        const [rows] = await config.db.query('SELECT * FROM users WHERE id = ?', [id]);
+        if (rows.length === 0) {
+            return null;
+        }
+        else {
+            const [role] = await config.db.query('SELECT * FROM users_roles WHERE user_id = ?', [rows[0].id]);
+            rows[0].roles = role.map(role => roleIdConverter(role.role_id));
+            return rows[0];
+        }
+    }
     static async verifyPassword(password, storedPassword) {
         return bcrypt.compare(password, storedPassword);
     }

@@ -91,8 +91,13 @@ class UserController {
             if(token == null){
                 return res.status(403).json({ error: 'Client Error (No token) Response' });
             }
+
             const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-            const userData = await UserModel.getUserByEmail(decoded.email);
+            if (decoded === null) {
+                return res.status(403).json({ error: 'Client Error (Wrong token) Response' });
+            }
+            const userId = req.params.id;
+            const userData = await UserModel.getUserById(userId);
             if (userData === null) {
                 return res.status(403).json({ error: 'Client Error (Wrong token) Response' });
             }
