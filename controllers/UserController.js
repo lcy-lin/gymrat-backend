@@ -84,35 +84,46 @@ class UserController {
             res.status(500).json({ error: 'Internal Server Error' });
         } 
     }
-//     static async profile(req, res) {
-//         try{
-//             const authHeader = req.headers['authorization'];
-//             const token = authHeader && authHeader.split(' ')[1];
-//             if(token == null){
-//                 return res.status(403).json({ error: 'Client Error (No token) Response' });
-//             }
-//             const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-//             const response = {
-//                 data: {
-//                     provider: decoded.provider,
-//                     name: decoded.name,
-//                     email: decoded.email,
-//                     picture: decoded.picture,
+    static async profile(req, res) {
+        try{
+            const authHeader = req.headers['authorization'];
+            const token = authHeader && authHeader.split(' ')[1];
+            if(token == null){
+                return res.status(403).json({ error: 'Client Error (No token) Response' });
+            }
+            const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+            const userData = await UserModel.getUserByEmail(decoded.email);
+            if (userData === null) {
+                return res.status(403).json({ error: 'Client Error (Wrong token) Response' });
+            }
+            const isoDate = new Date(userData.created_at);
+            const formattedDate = `${isoDate.getFullYear()}-${(isoDate.getMonth() + 1).toString().padStart(2, '0')}-${isoDate.getDate().toString().padStart(2, '0')} ${isoDate.getHours().toString().padStart(2, '0')}:${isoDate.getMinutes().toString().padStart(2, '0')}:${isoDate.getSeconds().toString().padStart(2, '0')}`;
 
-//                 }
-//             }
-//             return res.status(200).json(response);
-//         } catch (error) {
-//             console.error(error);
-//             if (error.name === 'JsonWebTokenError' || 'TokenExpiredError') {
-//                 return res.status(401).json({ error: 'Client Error (Wrong token) Response' });
-//             }
-//             else {
-//                 return res.status(500).json({ error: 'Internal Server Error' });
-//             }
+            const response = {
+                data: {
+                    user: {
+                        id: userData.id,
+                        coach_id: userData.coach_id,
+                        name: userData.name,
+                        email: userData.email,
+                        picture: userData.picture,
+                        role: userData.roles,
+                        created_at: formattedDate,
+                    }
+                }
+            }
+            return res.status(200).json(response);
+        } catch (error) {
+            console.error(error);
+            if (error.name === 'JsonWebTokenError' || 'TokenExpiredError') {
+                return res.status(401).json({ error: 'Client Error (Wrong token) Response' });
+            }
+            else {
+                return res.status(500).json({ error: 'Internal Server Error' });
+            }
 
-//         }
-//     }
+        }
+    }
 }
 
 export default UserController;

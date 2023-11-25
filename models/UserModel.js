@@ -1,6 +1,7 @@
 import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import config from '../config.js';
+import roleIdConverter from '../utils/roleIdConverter.js';
 class UserModel {
     static async checkEmail(email){
         const [checkEmailResults] = await config.db.query('SELECT * FROM users WHERE email = ?', [email]);
@@ -33,7 +34,12 @@ class UserModel {
         if (rows.length === 0) {
             return null;
         }
-        return rows[0];
+        else {
+            const [role] = await config.db.query('SELECT * FROM users_roles WHERE user_id = ?', [rows[0].id]);
+            rows[0].roles = role.map(role => roleIdConverter(role.role_id));
+            return rows[0];
+        }
+        
     }
     static async verifyPassword(password, storedPassword) {
         return bcrypt.compare(password, storedPassword);
