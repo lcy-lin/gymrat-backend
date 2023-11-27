@@ -16,5 +16,14 @@ class check {
         }
         return true;
     }
+    static authHeader(header){
+
+        const authHeader = header;
+        const token = authHeader && authHeader.split(' ')[1];
+        if(token == null){
+            return null;
+        }
+        return token;
+    }
 }
 export default check;

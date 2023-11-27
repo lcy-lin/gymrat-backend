@@ -2,7 +2,6 @@ import UserModel from "../models/UserModel.js";
 import jwt from 'jsonwebtoken';
 import config from "../config.js";
 import check from "../utils/check.js";
-import axios from "axios";
 
 class UserController {
 
@@ -86,8 +85,8 @@ class UserController {
     }
     static async profile(req, res) {
         try{
-            const authHeader = req.headers['authorization'];
-            const token = authHeader && authHeader.split(' ')[1];
+
+            const token = check.authHeader(req.headers['authorization']);
             if(token == null){
                 return res.status(403).json({ error: 'Client Error (No token) Response' });
             }
