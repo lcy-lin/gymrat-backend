@@ -68,7 +68,7 @@ class ActModel {
     
           if (category.toLowerCase() === 'all') {
             query = `
-              SELECT a.*, DATE_FORMAT(a.created_at, '%Y-%m-%d %H:%i:%s') AS formatted_created_at, GROUP_CONCAT(t.name) AS tag_names
+              SELECT a.*, DATE_FORMAT(a.created_at, '%Y-%m-%d %H:%i:%s') AS created_at, GROUP_CONCAT(t.name) AS tags
               FROM activities a
               LEFT JOIN acts_tags at ON a.id = at.act_id
               LEFT JOIN tags t ON at.tag_id = t.id
@@ -78,7 +78,7 @@ class ActModel {
             queryParams = [userId];
           } else {
             query = `
-                SELECT a.*, DATE_FORMAT(a.created_at, '%Y-%m-%d %H:%i:%s') AS formatted_created_at, GROUP_CONCAT(t.name) AS tag_names
+                SELECT a.*, DATE_FORMAT(a.created_at, '%Y-%m-%d %H:%i:%s') AS created_at, GROUP_CONCAT(t.name) AS tags
                 FROM activities a
                 LEFT JOIN acts_tags at ON a.id = at.act_id
                 LEFT JOIN tags t ON at.tag_id = t.id
@@ -90,7 +90,7 @@ class ActModel {
           const [results] = await config.db.query(query, queryParams);
           return results.map((result) => ({
             ...result,
-            tag_names: result.tag_names ? result.tag_names.split(',') : [],
+            tags: result.tags ? result.tags.split(',') : [],
           }));
         } catch (error) {
           console.error(error);
