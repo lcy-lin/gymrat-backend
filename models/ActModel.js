@@ -61,5 +61,41 @@ class ActModel {
             return { success: false, error: 'Error inserting movements' };
         }
     }
+    static async getActByUserId(category, userId) {
+        try {
+          let query;
+          let queryParams;
+    
+          if (category.toLowerCase() === 'all') {
+            query = `
+              SELECT a.*, DATE_FORMAT(a.created_at, '%Y-%m-%d %H:%i:%s') AS formatted_created_at, GROUP_CONCAT(t.name) AS tag_names
+              FROM activities a
+              LEFT JOIN acts_tags at ON a.id = at.act_id
+              LEFT JOIN tags t ON at.tag_id = t.id
+              WHERE a.user_id = ?
+              GROUP BY a.id
+            `;
+            queryParams = [userId];
+          } else {
+            query = `
+                SELECT a.*, DATE_FORMAT(a.created_at, '%Y-%m-%d %H:%i:%s') AS formatted_created_at, GROUP_CONCAT(t.name) AS tag_names
+                FROM activities a
+                LEFT JOIN acts_tags at ON a.id = at.act_id
+                LEFT JOIN tags t ON at.tag_id = t.id
+                WHERE a.user_id = ? AND t.name = ?
+                GROUP BY a.id
+                `;
+            queryParams = [userId, category];
+          }
+          const [results] = await config.db.query(query, queryParams);
+          return results.map((result) => ({
+            ...result,
+            tag_names: result.tag_names ? result.tag_names.split(',') : [],
+          }));
+        } catch (error) {
+          console.error(error);
+          return { success: false, error: 'Error retrieving activities' };
+        }
+      }
 }
 export default ActModel;

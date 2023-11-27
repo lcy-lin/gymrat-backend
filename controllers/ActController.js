@@ -2,6 +2,7 @@ import check from "../utils/check.js";
 import jwt from "jsonwebtoken";
 import config from "../config.js";
 import ActModel from "../models/ActModel.js";
+import UserModel from "../models/UserModel.js";
 class ActController {
     static async createAct(req, res) {
         const token = check.authHeader(req.headers['authorization']);
@@ -52,7 +53,27 @@ class ActController {
 
     }
     static async getAct(req, res) {
-        const category = req.query.category || 'all';
+        try{
+            const token = check.authHeader(req.headers['authorization']);
+            if(token == null){
+                return res.status(403).json({ error: 'Client Error (No token) Response' });
+            }
+            const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+            if (decoded === null) {
+                return res.status(403).json({ error: 'Client Error (Wrong token) Response' });
+            }
+            const category = req.query.category || 'all';
+            const userId = req.body.data.user_id;
+            const results = await ActModel.getActByUserId(category,userId);
+            return res.status(200).json({
+                category: category,
+                activities: results,
+            });
+        }
+        catch (error) {
+            return res.status(500).json({ error: 'Internal Server Error' });
+        }
+        
     }
 }
 export default ActController;
