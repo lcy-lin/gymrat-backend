@@ -27,7 +27,7 @@ class UserModel {
         return insertResult.insertId;
     }
     static async generateAccessToken(userData) {
-        return jwt.sign(userData, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' });
+        return jwt.sign(userData, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '30d' });
     }
     static async getUserByEmail(email){
         const [rows] = await config.db.query('SELECT * FROM users WHERE email = ?', [email]);

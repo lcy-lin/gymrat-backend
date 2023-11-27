@@ -11,7 +11,7 @@ class UserController {
         const response = {
             data: {
                 access_token: token,
-                access_expired: 3600,
+                access_expired: '30days',
                 user: userData,
             },
         };
