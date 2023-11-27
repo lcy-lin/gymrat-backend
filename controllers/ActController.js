@@ -56,14 +56,14 @@ class ActController {
         try{
             const token = check.authHeader(req.headers['authorization']);
             if(token == null){
-                return res.status(403).json({ error: 'Client Error (No token) Response' });
+                return res.status(401).json({ error: 'Client Error (No token) Response' });
             }
             const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
             if (decoded === null) {
                 return res.status(403).json({ error: 'Client Error (Wrong token) Response' });
             }
             const category = req.query.category || 'all';
-            const userId = req.body.data.user_id;
+            const userId = req.query.user_id;
             const results = await ActModel.getActByUserId(category,userId);
             return res.status(200).json({
                 category: category,
@@ -71,7 +71,10 @@ class ActController {
             });
         }
         catch (error) {
-            return res.status(500).json({ error: 'Internal Server Error' });
+            if(error.detail.name === 'TokenExpiredError'){
+                return res.status(403).json({ error: 'Client Error (Token Expired) Response' });
+            }
+            return res.status(500).json({ error: 'Internal Server Error', detail: error });
         }
         
     }
