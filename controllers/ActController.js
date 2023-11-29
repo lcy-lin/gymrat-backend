@@ -15,7 +15,7 @@ class ActController {
         }
         try {
             const {user_id, tags, description, publicity, movements} = req.body.data;
-            if (user_id == null || tags == null || description == null || publicity == null || movements == null || movements?.sets == null) {
+            if (user_id == null || tags == null || description == null || publicity == null || movements == null) {
                 return res.status(400).json({ error: 'Client Error Response' });
             }
             for (let tag of tags) {
