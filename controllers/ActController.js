@@ -5,13 +5,9 @@ import ActModel from "../models/ActModel.js";
 import UserModel from "../models/UserModel.js";
 class ActController {
     static async createAct(req, res) {
-        const token = check.authHeader(req.headers['authorization']);
-        if(token == null){
-            return res.status(403).json({ error: 'Client Error (No token) Response' });
-        }
-        const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-        if (decoded === null) {
-            return res.status(403).json({ error: 'Client Error (Wrong token) Response' });
+        const authRes = check.authenticateToken(req.headers);
+        if (authRes.status !== 200) {
+            return res.status(authRes.status).json({ error: authRes.error });
         }
         try {
             const {user_id, tags, description, publicity, movements} = req.body.data;
@@ -60,13 +56,9 @@ class ActController {
     }
     static async getAct(req, res) {
         try{
-            const token = check.authHeader(req.headers['authorization']);
-            if(token == null){
-                return res.status(401).json({ error: 'Client Error (No token) Response' });
-            }
-            const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
-            if (decoded === null) {
-                return res.status(403).json({ error: 'Client Error (Wrong token) Response' });
+            const authRes = check.authenticateToken(req.headers);
+            if (authRes.status !== 200) {
+                return res.status(authRes.status).json({ error: authRes.error });
             }
             const category = req.query.category || 'all';
             const userId = req.query.user_id;
@@ -86,6 +78,41 @@ class ActController {
             return res.status(500).json({ error: 'Internal Server Error', detail: error });
         }
         
+    }
+    static async getActDetail(req, res) {
+
+        const authRes = check.authenticateToken(req.headers);
+        if (authRes.status !== 200) {
+            return res.status(authRes.status).json({ error: authRes.error });
+        }
+        const { userid, actid } = req.params;
+        if (actid == null) {
+            return res.status(400).json({ error: 'Client Error Response' });
+        }
+        try {
+            const results = await ActModel.getActByActId(actid);
+            if(results.success === false){
+                throw new Error(results.error);
+            }
+            if (results.activity.publicity === 0 && results.activity.user_id !== userid) {
+                return res.status(401).json({ error: 'Unauthorized' });
+            };
+            const movementsAndSetsRes = await ActModel.getMovementsAndSetsByActId(actid);
+            if(movementsAndSetsRes.success === false){
+                throw new Error(movementsAndSetsRes.error);
+            };
+            const { activity } = results;
+            const { movements } = movementsAndSetsRes;
+            return res.status(200).json({
+                activity: {
+                    ...activity,
+                    movements
+                },
+            });
+        }
+        catch (error) {
+            return res.status(500).json({ error: 'Internal Server Error' });
+        }
     }
 }
 export default ActController;

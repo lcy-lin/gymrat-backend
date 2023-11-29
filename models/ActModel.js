@@ -100,5 +100,122 @@ class ActModel {
           return { success: false, error: 'Error retrieving activities' };
         }
       }
+      static async getActByActId(actId) {
+        try {
+            const query = `
+                SELECT a.*, DATE_FORMAT(a.created_at, '%Y-%m-%d %H:%i:%s') AS created_at, GROUP_CONCAT(t.name) AS tags
+                FROM activities a
+                LEFT JOIN acts_tags at ON a.id = at.act_id
+                LEFT JOIN tags t ON at.tag_id = t.id
+                WHERE a.id = ?
+                GROUP BY a.id
+            `;
+            const [results] = await config.db.query(query, [actId]);
+    
+            if (results.length === 0) {
+                return { success: false, error: 'Activity not found' };
+            }
+    
+            const result = results[0];
+            return {
+                success: true,
+                activity: {
+                    ...result,
+                    tags: result.tags ? result.tags.split(',') : [],
+                },
+            };
+        } catch (error) {
+            console.error(error);
+            return { success: false, error: 'Error retrieving activity by ID' };
+        }
+    }
+    // static async getMovementsAndSetsByActId(actId) {
+    //     try {
+    //         const query = `
+    //             SELECT m.*, s.set_num, s.reps_achieved, s.str_left
+    //             FROM movements m
+    //             LEFT JOIN sets s ON m.id = s.mov_id
+    //             WHERE m.act_id = ?
+    //         `;
+    //         const [results] = await config.db.query(query, [actId]);
+    
+    //         if (results.length === 0) {
+    //             return { success: false, error: 'No movements and sets found for the given activity ID' };
+    //         }
+    
+    //         const movements = results.map((result) => {
+    //             const { set_num, reps_achieved, str_left, ...movementDetails } = result;
+    //             return {
+    //                 ...movementDetails,
+    //                 sets: {
+    //                     set_num,
+    //                     reps_achieved,
+    //                     str_left,
+    //                 },
+    //             };
+    //         });
+    
+    //         return {
+    //             success: true,
+    //             movements,
+    //         };
+    //     } catch (error) {
+    //         console.error(error);
+    //         return { success: false, error: 'Error retrieving movements and sets by activity ID' };
+    //     }
+    // }
+    static async getMovementsAndSetsByActId(actId) {
+        try {
+            const query = `
+                SELECT m.id as movement_id, m.act_id, m.name, m.num_of_sets, m.reps_goal, m.weight, m.description,
+                       s.set_num, s.reps_achieved, s.str_left
+                FROM movements m
+                LEFT JOIN sets s ON m.id = s.mov_id
+                WHERE m.act_id = ?
+            `;
+            const [results] = await config.db.query(query, [actId]);
+    
+            if (results.length === 0) {
+                return { success: false, error: 'No movements and sets found for the given activity ID' };
+            }
+    
+            const movementsMap = new Map();
+    
+            results.forEach((result) => {
+                const { movement_id, act_id, name, num_of_sets, reps_goal, weight, description, set_num, reps_achieved, str_left } = result;
+    
+                if (!movementsMap.has(movement_id)) {
+                    movementsMap.set(movement_id, {
+                        id: movement_id,
+                        name,
+                        num_of_sets,
+                        reps_goal,
+                        weight,
+                        description,
+                        sets: [],
+                    });
+                }
+    
+                movementsMap.get(movement_id).sets.push({
+                    set_num,
+                    reps_achieved,
+                    str_left,
+                });
+            });
+    
+            const movements = Array.from(movementsMap.values());
+    
+            return {
+                success: true,
+                movements,
+            };
+        } catch (error) {
+            console.error(error);
+            return { success: false, error: 'Error retrieving movements and sets by activity ID' };
+        }
+    }
+    
+    
+    
 }
 export default ActModel;

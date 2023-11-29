@@ -1,3 +1,4 @@
+import jwt from 'jsonwebtoken';
 class check {
     static validJsonHeader(header) {
 
@@ -24,6 +25,22 @@ class check {
             return null;
         }
         return token;
+    }
+    static authenticateToken(headers) {
+        
+        const token = check.authHeader(headers['authorization']);
+      
+        if (token == null) {
+            return { status: 401, error: 'Client Error (No token) Response' };
+        }
+      
+        const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);
+      
+        if (decoded === null) {
+            return { status: 403, error: 'Client Error (Wrong token) Response' };
+        }
+      
+        return { status: 200, decoded };
     }
 }
 export default check;
