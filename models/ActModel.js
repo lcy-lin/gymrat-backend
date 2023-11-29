@@ -180,6 +180,113 @@ class ActModel {
         }
     }
     
+    static async updateActivity(actId, updatedData) {
+        try {
+            // Extract tags from updatedData and remove it from updatedData
+            const { tags, movements, ...updatedActivityData } = updatedData;
+    
+            // Perform the necessary update query to update the activity
+            await config.db.query('UPDATE activities SET ? WHERE id = ?', [updatedActivityData, actId]);
+    
+            // Update tags associated with the activity
+            const updateTagsRes = await ActModel.updateTags(tags, actId);
+            if (!updateTagsRes.success) {
+                throw new Error(updateTagsRes.error);
+            }
+    
+            return { success: true };
+        } catch (error) {
+            console.error(error);
+            return { success: false, error: 'Error updating activity' };
+        }
+    }
+    
+
+    static async updateTags(tags, actId) {
+        try {
+            const [existingTags] = await config.db.query('SELECT tag_id FROM acts_tags WHERE act_id = ?', [actId]);
+            const existingTagIds = existingTags.map((tag) => tag.tag_id);
+    
+            await Promise.all(tags.map(async (tag) => {
+                const [tagResult] = await config.db.query(
+                    'SELECT id FROM tags WHERE name = ?',
+                    [tag]
+                );
+    
+                if (tagResult.length > 0) {
+                    const tagId = tagResult[0].id;
+    
+                    if (existingTagIds.includes(tagId)) {
+                        await config.db.query('UPDATE acts_tags SET tag_id = ? WHERE act_id = ? AND tag_id = ?', [tagId, actId, tagId]);
+                    } else {
+                        await config.db.query('INSERT INTO acts_tags (act_id, tag_id) VALUES (?, ?)', [actId, tagId]);
+                    }
+                }
+            }));
+    
+            return { success: true };
+        } catch (error) {
+            console.error(error);
+            return { success: false, error: 'Error updating tags' };
+        }
+    }
+    
+
+    static async updateMovementsAndSets(movements, actId) {
+        try {
+            const [existingMovements] = await config.db.query('SELECT id FROM movements WHERE act_id = ?', [actId]);
+            const existingMovementIds = existingMovements.map((movement) => movement.id);
+    
+            await Promise.all(movements.map(async (movement) => {
+                if (movement.id && existingMovementIds.includes(movement.id)) {
+                    await config.db.query(
+                        'UPDATE movements SET name = ?, num_of_sets = ?, reps_goal = ?, weight = ?, description = ? WHERE id = ?',
+                        [movement.name, movement.num_of_sets, movement.reps_goal, movement.weight, movement.description, movement.id]
+                    );
+    
+                    const [existingSets] = await config.db.query('SELECT set_num FROM sets WHERE mov_id = ?', [movement.id]);
+                    const existingSetIds = existingSets.map((set) => set.set_num);
+    
+                    await Promise.all(movement.sets.map(async (set) => {
+                        if (set.set_num && existingSetIds.includes(set.set_num)) {
+                            await config.db.query(
+                                'UPDATE sets SET reps_achieved = ?, str_left = ? WHERE mov_id = ? AND set_num = ?',
+                                [set.reps_achieved, set.str_left, movement.id, set.set_num]
+                            );
+                        } else {
+                            await config.db.query(
+                                'INSERT INTO sets (mov_id, set_num, reps_achieved, str_left) VALUES (?, ?, ?, ?)',
+                                [movement.id, set.set_num, set.reps_achieved, set.str_left]
+                            );
+                        }
+                    }));
+                } else {
+                    const [movementResult] = await config.db.query(
+                        'INSERT INTO movements (act_id, name, num_of_sets, reps_goal, weight, description) VALUES (?, ?, ?, ?, ?, ?)',
+                        [actId, movement.name, movement.num_of_sets, movement.reps_goal, movement.weight, movement.description]
+                    );
+    
+                    const movementId = movementResult.insertId;
+    
+                    await Promise.all(movement.sets.map(async (set) => {
+                        if (set.set_num === null || set.reps_achieved === null || set.str_left === null) {
+                            throw new Error('Invalid set properties');
+                        }
+    
+                        await config.db.query(
+                            'INSERT INTO sets (mov_id, set_num, reps_achieved, str_left) VALUES (?, ?, ?, ?)',
+                            [movementId, set.set_num, set.reps_achieved, set.str_left]
+                        );
+                    }));
+                }
+            }));
+    
+            return { success: true };
+        } catch (error) {
+            console.error(error);
+            return { success: false, error: 'Error updating movements and sets' };
+        }
+    }
     
     
 }

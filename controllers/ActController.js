@@ -86,7 +86,7 @@ class ActController {
             return res.status(authRes.status).json({ error: authRes.error });
         }
         const { userid, actid } = req.params;
-        if (actid == null) {
+        if (actid == null || userid == null) {
             return res.status(400).json({ error: 'Client Error Response' });
         }
         try {
@@ -94,7 +94,7 @@ class ActController {
             if(results.success === false){
                 throw new Error(results.error);
             }
-            if (results.activity.publicity === 0 && results.activity.user_id !== userid) {
+            if (results.activity.publicity === 0 && Number(results.activity.user_id) !== Number(userid)) {
                 return res.status(401).json({ error: 'Unauthorized' });
             };
             const movementsAndSetsRes = await ActModel.getMovementsAndSetsByActId(actid);
@@ -111,6 +111,48 @@ class ActController {
             });
         }
         catch (error) {
+            return res.status(500).json({ error: 'Internal Server Error' });
+        }
+    }
+    static async putActDetail(req, res) {
+
+        const authRes = check.authenticateToken(req.headers);
+        if (authRes.status !== 200) {
+            return res.status(authRes.status).json({ error: authRes.error });
+        }
+        const { userid, actid } = req.params;
+        const updatedData = req.body.activity;
+        if (actid == null || userid == null) {
+            return res.status(400).json({ error: 'Client Error Response' });
+        }
+        try {
+            const existingActivity = await ActModel.getActByActId(actid);
+            if (!existingActivity.success) {
+                return res.status(404).json({ error: 'Activity not found' });
+            }
+            if (Number(existingActivity.activity.user_id) !== Number(userid)) {
+                return res.status(401).json({ error: 'Unauthorized' });
+            }
+            const updateActRes = await ActModel.updateActivity(actid, updatedData);
+            if (!updateActRes.success) {
+                throw new Error(updateActRes.error);
+            }
+            const updateTagsRes = await ActModel.updateTags(updatedData.tags, actid);
+            if (!updateTagsRes.success) {
+                throw new Error(updateTagsRes.error);
+            }
+            const updateMoveSetRes = await ActModel.updateMovementsAndSets(updatedData.movements, actid);
+            if (!updateMoveSetRes.success) {
+                throw new Error(updateMoveSetRes.error);
+            }
+    
+            return res.status(200).json({
+                activity: {
+                    id: actid,
+                },
+             });
+        } catch (error) {
+            console.error('Error updating activity:', error);
             return res.status(500).json({ error: 'Internal Server Error' });
         }
     }
