@@ -48,9 +48,12 @@ class ActModel {
                 const movementId = movementResult.insertId;
     
                 await Promise.all(movement.sets.map(async (set) => {
+                    if (set.set_num === null || set.reps_achieved === null || set.str_left === null) {
+                        throw new Error('Invalid set properties');
+                    }
                     await config.db.query(
-                        'INSERT INTO sets (mov_id, reps_achieved, str_left) VALUES (?, ?, ?)',
-                        [movementId, set.reps_achieved, set.str_left]
+                        'INSERT INTO sets (mov_id, set_num, reps_achieved, str_left) VALUES (?, ? , ?, ?)',
+                        [movementId, set.set_num, set.reps_achieved, set.str_left]
                     );
                 }));
             }));
@@ -58,7 +61,7 @@ class ActModel {
         }
         catch (error) {
             console.error(error);
-            return { success: false, error: 'Error inserting movements' };
+            return { success: false, error: error.message };
         }
     }
     static async getActByUserId(category, userId) {

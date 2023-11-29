@@ -15,7 +15,7 @@ class ActController {
         }
         try {
             const {user_id, tags, description, publicity, movements} = req.body.data;
-            if (user_id == null || tags == null || description == null || publicity == null || movements == null) {
+            if (user_id == null || tags == null || description == null || publicity == null || movements == null || movements?.sets == null) {
                 return res.status(400).json({ error: 'Client Error Response' });
             }
             for (let tag of tags) {
@@ -30,13 +30,19 @@ class ActController {
                     return res.status(400).json({ error: 'Client Error Response' });
                 }
             }
-            const actId = await ActModel.insertAct(user_id, description, publicity, movements);
+            const actId = await ActModel.insertAct(user_id, description, publicity);
+            if(actId.success === false){
+                throw new Error(actId.error);
+            }
             const tagRes = await ActModel.insertTags(tags, actId);
             if (tagRes.success === false) {
                 throw new Error(tagRes.error);
             }
             const movRes = await ActModel.insertMovements(movements, actId);
             if (movRes.success === false) {
+                if (movRes.error === 'Invalid set properties') {
+                    return res.status(400).json({ error: 'Client Error Response' });
+                }
                 throw new Error(movRes.error);
             }
             return res.status(200).json({
@@ -64,6 +70,9 @@ class ActController {
             }
             const category = req.query.category || 'all';
             const userId = req.query.user_id;
+            if (userId == null) {
+                return res.status(400).json({ error: 'Client Error Response' });
+            }
             const results = await ActModel.getActByUserId(category,userId);
             return res.status(200).json({
                 category: category,
