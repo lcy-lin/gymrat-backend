@@ -99,17 +99,18 @@ class ActModel {
           console.error(error);
           return { success: false, error: 'Error retrieving activities' };
         }
-      }
-      static async getActByActId(actId) {
+    }
+    static async getActByActId(actId) {
         try {
             const query = `
-                SELECT a.*, DATE_FORMAT(a.created_at, '%Y-%m-%d %H:%i:%s') AS created_at, GROUP_CONCAT(t.name) AS tags
+                SELECT a.id, a.user_id, a.description, a.publicity, DATE_FORMAT(a.created_at, '%Y-%m-%d %H:%i:%s') AS created_at, GROUP_CONCAT(t.name) AS tags
                 FROM activities a
-                LEFT JOIN acts_tags at ON a.id = at.act_id
+                LEFT JOIN acts_tags at ON a.id = at.act_id AND at.soft_delete = 0
                 LEFT JOIN tags t ON at.tag_id = t.id
-                WHERE a.id = ?
+                WHERE a.id = ? AND a.soft_delete = 0
                 GROUP BY a.id
             `;
+
             const [results] = await config.db.query(query, [actId]);
     
             if (results.length === 0) {
@@ -133,11 +134,12 @@ class ActModel {
         try {
             const query = `
                 SELECT m.id as movement_id, m.act_id, m.name, m.num_of_sets, m.reps_goal, m.weight, m.description,
-                       s.set_num, s.reps_achieved, s.str_left
+                    s.set_num, s.reps_achieved, s.str_left
                 FROM movements m
                 LEFT JOIN sets s ON m.id = s.mov_id
-                WHERE m.act_id = ?
+                WHERE m.act_id = ? AND m.soft_delete = 0 AND (s.soft_delete = 0)
             `;
+
             const [results] = await config.db.query(query, [actId]);
     
             if (results.length === 0) {
@@ -206,7 +208,8 @@ class ActModel {
         try {
             const [existingTags] = await config.db.query('SELECT tag_id FROM acts_tags WHERE act_id = ?', [actId]);
             const existingTagIds = existingTags.map((tag) => tag.tag_id);
-    
+            let tagIds = [];
+
             await Promise.all(tags.map(async (tag) => {
                 const [tagResult] = await config.db.query(
                     'SELECT id FROM tags WHERE name = ?',
@@ -215,13 +218,19 @@ class ActModel {
     
                 if (tagResult.length > 0) {
                     const tagId = tagResult[0].id;
-    
+                    tagIds.push(tagId);
+                    console.log(tagIds);
                     if (existingTagIds.includes(tagId)) {
-                        await config.db.query('UPDATE acts_tags SET tag_id = ? WHERE act_id = ? AND tag_id = ?', [tagId, actId, tagId]);
+                        await config.db.query('UPDATE acts_tags SET tag_id = ?, soft_delete = ? WHERE act_id = ? AND tag_id = ?', [tagId, 0, actId, tagId]);
                     } else {
                         await config.db.query('INSERT INTO acts_tags (act_id, tag_id) VALUES (?, ?)', [actId, tagId]);
                     }
                 }
+            }));
+            const tagsToDelete = existingTagIds.filter((tagId) => !tagIds.includes(tagId));
+            console.log(tagsToDelete);
+            await Promise.all(tagsToDelete.map(async (tagId) => {
+                await config.db.query('UPDATE acts_tags SET soft_delete = 1 WHERE act_id = ? AND tag_id = ?', [actId, tagId]);
             }));
     
             return { success: true };
@@ -236,35 +245,45 @@ class ActModel {
         try {
             const [existingMovements] = await config.db.query('SELECT id FROM movements WHERE act_id = ?', [actId]);
             const existingMovementIds = existingMovements.map((movement) => movement.id);
-    
             await Promise.all(movements.map(async (movement) => {
                 if (movement.id && existingMovementIds.includes(movement.id)) {
                     await config.db.query(
-                        'UPDATE movements SET name = ?, num_of_sets = ?, reps_goal = ?, weight = ?, description = ? WHERE id = ?',
-                        [movement.name, movement.num_of_sets, movement.reps_goal, movement.weight, movement.description, movement.id]
+                        'UPDATE movements SET name = ?, num_of_sets = ?, reps_goal = ?, weight = ?, description = ?, soft_delete = ? WHERE id = ?',
+                        [movement.name, movement.num_of_sets, movement.reps_goal, movement.weight, movement.description, 0, movement.id]
                     );
     
-                    const [existingSets] = await config.db.query('SELECT set_num FROM sets WHERE mov_id = ?', [movement.id]);
-                    const existingSetIds = existingSets.map((set) => set.set_num);
-    
+                    const [existingSets] = await config.db.query('SELECT * FROM sets WHERE mov_id = ?', [movement.id]);
+                    const existingSetNums = existingSets.map((set) => set.set_num);
                     await Promise.all(movement.sets.map(async (set) => {
-                        if (set.set_num && existingSetIds.includes(set.set_num)) {
+                        if (set.set_num && existingSetNums.includes(set.set_num)) {
                             await config.db.query(
-                                'UPDATE sets SET reps_achieved = ?, str_left = ? WHERE mov_id = ? AND set_num = ?',
-                                [set.reps_achieved, set.str_left, movement.id, set.set_num]
+                                'UPDATE sets SET reps_achieved = ?, str_left = ?, soft_delete = ? WHERE mov_id = ? AND set_num = ?',
+                                [set.reps_achieved, set.str_left, 0, movement.id, set.set_num]
                             );
-                        } else {
+                        } 
+                        else {
                             await config.db.query(
-                                'INSERT INTO sets (mov_id, set_num, reps_achieved, str_left) VALUES (?, ?, ?, ?)',
-                                [movement.id, set.set_num, set.reps_achieved, set.str_left]
+                                'INSERT INTO sets (mov_id, set_num, reps_achieved, soft_delete, str_left) VALUES (?, ?, ?, ?, ?)',
+                                [movement.id, set.set_num, set.reps_achieved, 0, set.str_left]
                             );
                         }
                     }));
+                    // ---------------------- DELETE ----------------------
+                    const deletedSets = existingSets.filter((set) => !movement.sets.some((setInRequest) => setInRequest.set_num === set.set_num));
+                    await Promise.all(deletedSets.map(async (set) => {
+                        await config.db.query('UPDATE sets SET soft_delete = 1 WHERE set_num = ? AND mov_id = ?', [set.set_num, movement.id]);
+                    }));
+                    const deletedMovements = existingMovements.filter((existingMovement) => !movements.some((movementInRequest) => movementInRequest.id === existingMovement.id));
+                    await Promise.all(deletedMovements.map(async (existingMovement) => {
+                        await config.db.query('UPDATE movements SET soft_delete = 1 WHERE id = ?', [existingMovement.id]);
+                    }));
+                    // ---------------------- DELETE ----------------------
                 } else {
                     const [movementResult] = await config.db.query(
-                        'INSERT INTO movements (act_id, name, num_of_sets, reps_goal, weight, description) VALUES (?, ?, ?, ?, ?, ?)',
+                        'INSERT INTO movements (act_id, name, num_of_sets, reps_goal, weight, description) VALUES (?, ?, ?, ?, ?, ?, ?)',
                         [actId, movement.name, movement.num_of_sets, movement.reps_goal, movement.weight, movement.description]
                     );
+                    
     
                     const movementId = movementResult.insertId;
     

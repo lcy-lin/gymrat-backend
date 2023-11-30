@@ -137,10 +137,7 @@ class ActController {
             if (!updateActRes.success) {
                 throw new Error(updateActRes.error);
             }
-            const updateTagsRes = await ActModel.updateTags(updatedData.tags, actid);
-            if (!updateTagsRes.success) {
-                throw new Error(updateTagsRes.error);
-            }
+
             const updateMoveSetRes = await ActModel.updateMovementsAndSets(updatedData.movements, actid);
             if (!updateMoveSetRes.success) {
                 throw new Error(updateMoveSetRes.error);
