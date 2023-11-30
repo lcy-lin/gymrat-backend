@@ -153,5 +153,36 @@ class ActController {
             return res.status(500).json({ error: 'Internal Server Error' });
         }
     }
+    static async deleteActDetail(req, res) {
+        const authRes = check.authenticateToken(req.headers);
+        if (authRes.status !== 200) {
+            return res.status(authRes.status).json({ error: authRes.error });
+        }
+        const { userid, actid } = req.params;
+        if (actid == null || userid == null) {
+            return res.status(400).json({ error: 'Client Error Response' });
+        }
+        try {
+            const existingActivity = await ActModel.getActByActId(actid);
+            if (!existingActivity.success) {
+                return res.status(404).json({ error: 'Activity not found' });
+            }
+            if (Number(existingActivity.activity.user_id) !== Number(userid)) {
+                return res.status(401).json({ error: 'Unauthorized' });
+            }
+            const deleteActRes = await ActModel.deleteActivity(actid);
+            if (!deleteActRes.success) {
+                throw new Error(deleteActRes.error);
+            }
+            return res.status(200).json({
+                activity: {
+                    id: actid,
+                },
+             });
+        } catch (error) {
+            console.error('Error updating activity:', error);
+            return res.status(500).json({ error: 'Internal Server Error' });
+        }
+    }
 }
 export default ActController;

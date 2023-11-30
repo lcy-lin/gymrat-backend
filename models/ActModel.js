@@ -75,7 +75,7 @@ class ActModel {
               FROM activities a
               LEFT JOIN acts_tags at ON a.id = at.act_id
               LEFT JOIN tags t ON at.tag_id = t.id
-              WHERE a.user_id = ?
+              WHERE a.user_id = ? AND a.soft_delete = 0
               GROUP BY a.id
             `;
             queryParams = [userId];
@@ -85,16 +85,16 @@ class ActModel {
                 FROM activities a
                 LEFT JOIN acts_tags at ON a.id = at.act_id
                 LEFT JOIN tags t ON at.tag_id = t.id
-                WHERE a.user_id = ? AND t.name = ?
+                WHERE a.user_id = ? AND t.name = ? AND a.soft_delete = 0
                 GROUP BY a.id
                 `;
             queryParams = [userId, category];
           }
           const [results] = await config.db.query(query, queryParams);
-          return results.map((result) => ({
+          return results.map(({ soft_delete, ...result }) => ({
             ...result,
             tags: result.tags ? result.tags.split(',') : [],
-          }));
+            }));
         } catch (error) {
           console.error(error);
           return { success: false, error: 'Error retrieving activities' };
@@ -306,7 +306,15 @@ class ActModel {
             return { success: false, error: 'Error updating movements and sets' };
         }
     }
-    
+    static async deleteActivity(actId) {
+        try {
+            await config.db.query('UPDATE activities SET soft_delete = 1 WHERE id = ?', [actId]);
+            return { success: true };
+        } catch (error) {
+            console.error(error);
+            return { success: false, error: 'Error deleting activity' };
+        }
+    }
     
 }
 export default ActModel;
