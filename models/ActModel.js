@@ -73,7 +73,7 @@ class ActModel {
             query = `
               SELECT a.*, DATE_FORMAT(a.created_at, '%Y-%m-%d %H:%i:%s') AS created_at, GROUP_CONCAT(t.name) AS tags
               FROM activities a
-              LEFT JOIN acts_tags at ON a.id = at.act_id
+              LEFT JOIN acts_tags at ON a.id = at.act_id AND at.soft_delete = 0
               LEFT JOIN tags t ON at.tag_id = t.id
               WHERE a.user_id = ? AND a.soft_delete = 0
               GROUP BY a.id
@@ -83,7 +83,7 @@ class ActModel {
             query = `
                 SELECT a.*, DATE_FORMAT(a.created_at, '%Y-%m-%d %H:%i:%s') AS created_at, GROUP_CONCAT(t.name) AS tags
                 FROM activities a
-                LEFT JOIN acts_tags at ON a.id = at.act_id
+                LEFT JOIN acts_tags at ON a.id = at.act_id AND at.soft_delete = 0
                 LEFT JOIN tags t ON at.tag_id = t.id
                 WHERE a.user_id = ? AND t.name = ? AND a.soft_delete = 0
                 GROUP BY a.id
