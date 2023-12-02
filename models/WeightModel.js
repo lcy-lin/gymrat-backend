@@ -29,6 +29,16 @@ class WeightModel {
             return { success: false, error: 'Internal Server Error' };
         }
     }
-
+    static async updateWeight(weight, weightid) {
+        try {
+            const sql = `UPDATE daily_weight SET weight = ? WHERE id = ?`;
+            await config.db.query(sql, [weight, weightid]);
+            return { success: true };
+        }
+        catch (error) {
+            console.error('Error updating weight:', error);
+            return { success: false, error: 'Internal Server Error' };
+        }
+    }
 }
 export default WeightModel;
