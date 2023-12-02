@@ -43,7 +43,7 @@ class ActController {
             }
             return res.status(200).json({
                 data:{
-                    activity: {
+                    activity : {
                         id: actId,
                     }
                 }
