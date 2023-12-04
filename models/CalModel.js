@@ -15,22 +15,61 @@ class CalModel {
             return { success: false, error: 'Internal Server Error' };
         }   
     }
-    static async updateDailyCalories(dailyCalsId) {
-        try {
-            const calculateTotalCaloriesQuery = `
-                SELECT SUM(calories) AS totalCalories
+    static queries = {
+        calories: {
+            calculateQuery: `
+                SELECT SUM(calories) AS total
                 FROM food
                 WHERE daily_cals_id = ?;
-            `;
-            const [caloriesResult] = await config.db.query(calculateTotalCaloriesQuery, [dailyCalsId]);
-            const totalCalories = caloriesResult[0].totalCalories || 0;
-            const updateDailyCaloriesQuery = `
+            `,
+            updateQuery: `
                 UPDATE daily_cals
                 SET calories = ?
                 WHERE id = ?;
-            `;
-    
-            await config.db.query(updateDailyCaloriesQuery, [totalCalories, dailyCalsId]);
+            `,
+        },
+        carbs: {
+            calculateQuery: `
+                SELECT SUM(carbs) AS total
+                FROM food
+                WHERE daily_cals_id = ?;
+            `,
+            updateQuery: `
+                UPDATE daily_cals
+                SET carbs = ?
+                WHERE id = ?;
+            `,
+        },
+        protein: {
+            calculateQuery: `
+                SELECT SUM(protein) AS total
+                FROM food
+                WHERE daily_cals_id = ?;
+            `,
+            updateQuery: `
+                UPDATE daily_cals
+                SET protein = ?
+                WHERE id = ?;
+            `,
+        },
+        fat: {
+            calculateQuery: `
+                SELECT SUM(fat) AS total
+                FROM food
+                WHERE daily_cals_id = ?;
+            `,
+            updateQuery: `
+                UPDATE daily_cals
+                SET fat = ?
+                WHERE id = ?;
+            `,
+        },
+    }
+    static async updateDailyTotal(calculateQuery, updateQuery, dailyCalsId) {
+        try {
+            const [result] = await config.db.query(calculateQuery, [dailyCalsId]);
+            const totalResult = result[0].total || 0;    
+            await config.db.query(updateQuery, [totalResult, dailyCalsId]);
     
             return { success: true };
         } catch (error) {
@@ -71,8 +110,11 @@ class CalModel {
                 await config.db.query(insertFoodQuery, [dailyCalsId, name, meal_type, calories, carbohydrates_total_g, protein_g, fat_total_g, serving_size_g]);
                 result.push({ name, calories, carbs: carbohydrates_total_g, protein: protein_g, fat: fat_total_g, servings: serving_size_g });
             }
-
-            await this.updateDailyCalories(dailyCalsId);
+            await this.updateDailyTotal(this.queries.calories.calculateQuery, this.queries.calories.updateQuery, dailyCalsId);
+            await this.updateDailyTotal(this.queries.carbs.calculateQuery, this.queries.carbs.updateQuery, dailyCalsId);
+            await this.updateDailyTotal(this.queries.protein.calculateQuery, this.queries.protein.updateQuery, dailyCalsId);
+            await this.updateDailyTotal(this.queries.fat.calculateQuery, this.queries.fat.updateQuery, dailyCalsId);
+            
             return { success: true, data: result };
         } catch (error) {
             console.error('Error inserting food:', error);
