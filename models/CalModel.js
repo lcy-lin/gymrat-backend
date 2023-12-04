@@ -123,11 +123,15 @@ class CalModel {
     }
     static async getFood(user_id, start_date, end_date) {
         try {
-            const sql = `SELECT id, calories, DATE_FORMAT(date, '%Y-%m-%d') AS date FROM daily_cals WHERE user_id = ? AND date BETWEEN ? AND ? AND soft_delete = 0`;
+            const sql = `SELECT id, calories, fat, protein, carbs, DATE_FORMAT(date, '%Y-%m-%d') AS date
+                        FROM daily_cals WHERE user_id = ? AND date BETWEEN ? AND ? AND soft_delete = 0`;
             const [rows] = await config.db.query(sql, [user_id, start_date, end_date]);
             const transformedData = rows.map(row => ({
                 id: row.id,
                 calories: row.calories,
+                fat: row.fat,
+                protein: row.protein,
+                carbs: row.carbs,
                 date: row.date,
             }));
             const foodQuery = `
