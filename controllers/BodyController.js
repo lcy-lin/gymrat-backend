@@ -63,5 +63,49 @@ class BodyController {
             return res.status(500).json({ error: 'Internal Server Error' });
         }
     }
+    static async putBody(req, res) {
+        try {
+            const authRes = check.authenticateToken(req.headers);
+            if (authRes.status !== 200) {
+                return res.status(authRes.status).json({ error: authRes.error });
+            }
+            const {age, height, act_level, sex} = req.body.data;
+            const {id} = req.params;
+            if (age == null || height == null || act_level == null || sex == null || id == null) {
+                return res.status(400).json({ error: 'Client Error Response' });
+            }
+            const updateRes = await BodyModel.updateBody(age, height, act_level, sex, Number(id));
+            if(updateRes.success === false){
+                throw new Error(updateRes.error);
+            }
+            return res.status(200).json({ data: {body: {user_id: id} }});
+        }
+        catch (error) {
+            return res.status(500).json({ error: 'Internal Server Error' });
+        }
+    }
+    static async deleteBody(req, res) {
+        try {
+            const authRes = check.authenticateToken(req.headers);
+            if (authRes.status !== 200) {
+                return res.status(authRes.status).json({ error: authRes.error });
+            }
+            const {id} = req.params;
+            if (id == null) {
+                return res.status(400).json({ error: 'Client Error Response' });
+            }
+            const deleteRes = await BodyModel.deleteBody(Number(id));
+            if(deleteRes.success === false && deleteRes.code === 404){
+                return res.status(404).json({ error: deleteRes.error });
+            }
+            else if(deleteRes.success === false){
+                throw new Error(deleteRes.error);
+            }
+            return res.status(200).json({ data: {user_id: id }});
+        }
+        catch (error) {
+            return res.status(500).json({ error: 'Internal Server Error' });
+        }
+    }
 }
 export default BodyController;

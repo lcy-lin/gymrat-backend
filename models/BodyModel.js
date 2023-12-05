@@ -51,6 +51,32 @@ class BodyModel {
             return { success: false, error: 'Internal Server Error' };
         }
     }
-
+    static async updateBody (age, height, act_level, sex, id){
+        try {
+            const sql = `UPDATE body_data SET age = ?, height = ?, act_level = ?, sex = ? WHERE user_id = ?`;
+            await config.db.query(sql, [age, height, act_level, sex, id]);
+            return { success: true };
+        }
+        catch (error) {
+            console.error('Error updating body data:', error);
+            return { success: false, error: 'Internal Server Error' };
+        }
+    }
+    static async deleteBody (id){
+        try {
+            const checkQuery = `SELECT * FROM body_data WHERE user_id = ?`;
+            const [checkRows] = await config.db.query(checkQuery, [id]);
+            if (checkRows.length === 0) {
+                return { success: false, code: 404 ,  error: 'Body data not found' };
+            }
+            const sql = `UPDATE body_data SET soft_delete = 1 WHERE user_id = ?`;
+            await config.db.query(sql, [id]);
+            return { success: true };
+        }
+        catch (error) {
+            console.error('Error deleting body data:', error);
+            return { success: false, error: 'Internal Server Error' };
+        }
+    }
 }
 export default BodyModel;
