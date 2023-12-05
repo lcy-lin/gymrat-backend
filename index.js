@@ -4,6 +4,7 @@ import userRoutes from './routes/userRoutes.js';
 import actRoutes from './routes/actRoutes.js';
 import weightRoutes from './routes/weightRoutes.js';
 import calRoutes from './routes/calRoutes.js';
+import bodyRoutes from './routes/bodyRoutes.js';
 import dbMiddleware from './middleware/dbMiddleware.js';
 import cors from 'cors';
 const app = express();
@@ -17,6 +18,7 @@ app.use('/api/:version/users', userRoutes);
 app.use('/api/:version/activities', actRoutes);
 app.use('/api/:version/weights', weightRoutes);
 app.use('/api/:version/cals', calRoutes);
+app.use('/api/:version/bodies', bodyRoutes);
 app.get('/healthcheck', (req, res) => {
     res.send('OK');
 })
