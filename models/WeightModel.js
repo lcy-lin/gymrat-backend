@@ -51,5 +51,29 @@ class WeightModel {
             return { success: false, error: 'Internal Server Error' };
         }
     }
+    static async getLatestWeight(user_id) {
+        try {
+            const sql = `SELECT id, weight, DATE_FORMAT(created_at, '%Y-%m-%d %H:%i:%s') AS formatted_created_at 
+            FROM daily_weight 
+            WHERE user_id = ? AND soft_delete = 0
+            ORDER BY created_at DESC
+            LIMIT 1;
+            `;
+            const [row] = await config.db.query(sql, [user_id]);
+            if (row.length === 0) {
+                return { success: false, code: 404, error: 'Weight data not found' };
+            }
+            const data = {
+                id: row[0].id,
+                weight: row[0].weight,
+                created_at: row[0].formatted_created_at
+            };
+            return { success: true, data: data };
+        }
+        catch (error) {
+            console.error('Error getting weight data:', error);
+            return { success: false, error: 'Internal Server Error' };
+        }
+    }
 }
 export default WeightModel;

@@ -1,5 +1,6 @@
 import check from "../utils/check.js";
 import BodyModel from "../models/BodyModel.js";
+import WeightModel from "../models/WeightModel.js";
 
 class BodyController {
     static async createBody(req, res) {
@@ -13,7 +14,10 @@ class BodyController {
                 return res.status(400).json({ error: 'Client Error Response' });
             }
             const bodyRes = await BodyModel.insertBody(user_id, height, age, sex, act_level);
-            if(bodyRes.success === false){
+            if(bodyRes.success === false && bodyRes.code === 409){
+                return res.status(409).json({ error: bodyRes.error });
+            }
+            else if(bodyRes.success === false){
                 throw new Error(bodyRes.error);
             }
             return res.status(200).json({
@@ -29,6 +33,35 @@ class BodyController {
         }
     }
     static async getBody(req, res) {
+        try{
+            const authRes = check.authenticateToken(req.headers);
+            if (authRes.status !== 200) {
+                return res.status(authRes.status).json({ error: authRes.error });
+            }
+            const {id} = req.params;
+            if (id == null) {
+                return res.status(400).json({ error: 'Client Error Response' });
+            }
+            const weightRes = await WeightModel.getLatestWeight(id);
+            if(weightRes.success === false && weightRes.code === 404){
+                return res.status(404).json({ error: weightRes.error });
+            }
+            else if(weightRes.success === false){
+                throw new Error(weightRes.error);
+            }
+            
+            const bodyRes = await BodyModel.getBody(id, weightRes.data.weight);
+            if(bodyRes.success === false && bodyRes.code === 404){
+                return res.status(404).json({ error: bodyRes.error });
+            }
+            else if(bodyRes.success === false){
+                throw new Error(bodyRes.error);
+            }
+            return res.status(200).json({ data: bodyRes.data });
+        }
+        catch (error) {
+            return res.status(500).json({ error: 'Internal Server Error' });
+        }
     }
 }
 export default BodyController;
