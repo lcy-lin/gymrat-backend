@@ -69,16 +69,16 @@ class BodyController {
             if (authRes.status !== 200) {
                 return res.status(authRes.status).json({ error: authRes.error });
             }
-            const {age, height, act_level, sex} = req.body.data;
+            const {age, height, act_level, sex, weight} = req.body.data;
             const {id} = req.params;
             if (age == null || height == null || act_level == null || sex == null || id == null) {
                 return res.status(400).json({ error: 'Client Error Response' });
             }
-            const updateRes = await BodyModel.updateBody(age, height, act_level, sex, Number(id));
+            const updateRes = await BodyModel.updateBody(age, height, act_level, sex, Number(id), weight);
             if(updateRes.success === false){
                 throw new Error(updateRes.error);
             }
-            return res.status(200).json({ data: {body: {user_id: id} }});
+            return res.status(200).json({ data: updateRes.data });
         }
         catch (error) {
             return res.status(500).json({ error: 'Internal Server Error' });

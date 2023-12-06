@@ -51,11 +51,22 @@ class BodyModel {
             return { success: false, error: 'Internal Server Error' };
         }
     }
-    static async updateBody (age, height, act_level, sex, id){
+    static async updateBody (age, height, act_level, sex, id, weight){
         try {
             const sql = `UPDATE body_data SET age = ?, height = ?, act_level = ?, sex = ? WHERE user_id = ?`;
             await config.db.query(sql, [age, height, act_level, sex, id]);
-            return { success: true };
+            let bmr = 0;
+            sex === 'male' ? bmr = 66 + (13.7 * weight) + (5 * height) - (6.8 * age) : bmr = 655 + (9.6 * weight) + (1.8 * height) - (4.7 * age);
+            const data = {
+                height,
+                weight,
+                age,
+                sex,
+                act_level,
+                bmr: bmr,
+                tdee: bmr * this.actLevels[act_level],
+            };
+            return { success: true , data: data};
         }
         catch (error) {
             console.error('Error updating body data:', error);
