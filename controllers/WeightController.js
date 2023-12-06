@@ -55,16 +55,19 @@ class WeightController {
             if (authRes.status !== 200) {
                 return res.status(authRes.status).json({ error: authRes.error });
             }
-            const {weight} = req.body.data;
-            const {weightid} = req.params;
-            if (weight == null || weightid == null) {
+            const {weight, created_at} = req.body.data;
+            const {userid} = req.params;
+            if (weight == null || created_at == null) {
                 return res.status(400).json({ error: 'Client Error Response' });
             }
-            const dailyWeightRes = await WeightModel.updateWeight(weight, Number(weightid));
-            if(dailyWeightRes.success === false){
+            const dailyWeightRes = await WeightModel.updateWeight(userid, weight, created_at);
+            if(dailyWeightRes.success === false && dailyWeightRes.code === 404){
+                return res.status(404).json({ error: dailyWeightRes.error });
+            }
+            else if(dailyWeightRes.success === false){
                 throw new Error(dailyWeightRes.error);
             }
-            return res.status(200).json({ data: {daily_weight: {id: weightid} }});
+            return res.status(200).json({ data: dailyWeightRes.data });
         }
         catch (error) {
             return res.status(500).json({ error: 'Internal Server Error' });

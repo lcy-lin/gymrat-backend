@@ -29,11 +29,16 @@ class WeightModel {
             return { success: false, error: 'Internal Server Error' };
         }
     }
-    static async updateWeight(weight, weightid) {
+    static async updateWeight(userid, weight, created_at) {
         try {
-            const sql = `UPDATE daily_weight SET weight = ? WHERE id = ?`;
-            await config.db.query(sql, [weight, weightid]);
-            return { success: true };
+            const checkSql = `SELECT * FROM daily_weight WHERE created_at = ? AND user_id = ?`;
+            const [checkRow] = await config.db.query(checkSql, [created_at, userid]);
+            if (checkRow.length === 0) {
+                return { success: false, code: 404, error: 'Weight data not found' };
+            };
+            const sql = `UPDATE daily_weight SET weight = ? WHERE created_at = ? AND user_id = ?`;
+            await config.db.query(sql, [weight, created_at, userid]);
+            return { success: true, data: {weight, created_at} };
         }
         catch (error) {
             console.error('Error updating weight:', error);
