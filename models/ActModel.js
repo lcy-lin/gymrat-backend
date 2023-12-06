@@ -181,7 +181,36 @@ class ActModel {
             return { success: false, error: 'Error retrieving movements and sets by activity ID' };
         }
     }
+
+    static async getActRecordsByUser(userId) {
+        try {
+          const year = new Date().getFullYear();
+          const monthsList = Array.from({ length: 12 }, (_, i) => i + 1);
+          const unionAll = monthsList.map((month) => `SELECT ${month} AS month`).join('\nUNION ALL\n');
     
+          const query = `
+            SELECT
+              m.month AS activity_month,
+              COUNT(a.id) AS activity_count
+            FROM (
+              ${unionAll}
+            ) m
+            LEFT JOIN activities a ON MONTH(a.created_at) = m.month AND YEAR(a.created_at) = ?
+                                   AND a.user_id = ? AND a.soft_delete = 0
+            GROUP BY m.month
+          `;
+    
+          const values = [year, userId];
+    
+          const [results] = await config.db.query(query, values);
+    
+          return { success: true, records: results, year: year };
+        } catch (error) {
+          console.error(error);
+          return { success: false, error: 'Database error' };
+        }
+    }
+
     static async updateActivity(actId, updatedData) {
         try {
             // Extract tags from updatedData and remove it from updatedData
