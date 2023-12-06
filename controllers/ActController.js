@@ -86,10 +86,11 @@ class ActController {
                 return res.status(authRes.status).json({ error: authRes.error });
             }
             const {userid} = req.params;
+            const {year} = req.query;
             if (userid == null) {
                 return res.status(400).json({ error: 'Client Error Response' });
             }
-            const results = await ActModel.getActRecordsByUser(userid);
+            const results = await ActModel.getActRecordsByUser(userid, year);
             if(results.success === false){
                 throw new Error(results.error);
             }
