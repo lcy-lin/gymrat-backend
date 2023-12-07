@@ -129,6 +129,26 @@ class UserController {
 
         }
     }
+    static async search(req, res) {
+        try {
+            const token = check.authHeader(req.headers['authorization']);
+            if(token == null){
+                return res.status(403).json({ error: 'Client Error (No token) Response' });
+            }
+            const { keyword } = req.query;
+            const userData = await UserModel.getCoachByKeyword(keyword);
+            return res.status(200).json({ data: userData});
+        }
+        catch (error) {
+            console.error(error);
+            if (error.name === 'JsonWebTokenError' || 'TokenExpiredError') {
+                return res.status(401).json({ error: 'Client Error (Wrong token) Response' });
+            }
+            else {
+                return res.status(500).json({ error: 'Internal Server Error' });
+            }
+        }
+    }
 }
 
 export default UserController;

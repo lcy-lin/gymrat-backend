@@ -52,6 +52,19 @@ class UserModel {
             return rows[0];
         }
     }
+    static async getCoachByKeyword(keyword){
+        const sql = `
+            SELECT id, name, picture
+            FROM users
+            WHERE name LIKE ? 
+            AND id IN (SELECT user_id FROM users_roles WHERE role_id = 3)
+            `;
+        const [rows] = await config.db.query(sql, [`%${keyword}%`]);
+        if (rows.length === 0) {
+            return null;
+        }
+        return rows;
+    }
     static async verifyPassword(password, storedPassword) {
         return bcrypt.compare(password, storedPassword);
     }
