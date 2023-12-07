@@ -65,6 +65,18 @@ class UserModel {
         }
         return rows;
     }
+    static async updateCoach(id, coachId){
+        try{
+            const sql = `UPDATE users SET coach_id = ? WHERE id = ?`;
+            await config.db.query(sql, [coachId, id]);
+            
+            return {success: true};
+        }
+        catch(error){
+            return {success: true};
+        }
+        
+    }
     static async verifyPassword(password, storedPassword) {
         return bcrypt.compare(password, storedPassword);
     }
