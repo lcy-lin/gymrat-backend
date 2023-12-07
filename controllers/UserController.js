@@ -23,19 +23,22 @@ class UserController {
         try {
             const contentTypeHeader = req.get('Content-Type');
             if (check.validJsonHeader(contentTypeHeader) == false) {
+
                 return res.status(400).json({ error: 'Client Error Response' });
             }
-            const { name, email, password } = req.body;
+            const { name, email, password, roles } = req.body;
             if(check.validBody(name, email, password) == false){
                 return res.status(400).json({ error: 'Client Error Response' });
             }
-            if(await UserModel.checkEmail(email) == false){
+            const checkEmail = await UserModel.checkEmail(email);
+            if(!checkEmail){
                 return res.status(409).json({ error: 'Email Already Exists' });
             }
             const picture = null;
-            db.query('BEGIN');
             const insertId = await UserModel.insertUser(email, name, password, picture);
-            await UserModel.insertUserRole(insertId, 2);
+            roles.map(async (role) => {
+                await UserModel.insertUserRole(insertId, role);
+            });
             const userData = {
                 id: insertId,
                 name: name,
@@ -43,10 +46,8 @@ class UserController {
                 picture: picture,
             };
             await UserController.respondWithToken(res, userData);
-            db.query('COMMIT'); 
         }
         catch (error) {
-            await db.query('ROLLBACK');
             console.error(error);
             res.status(500).json({ error: 'Internal Server Error' });
         }
