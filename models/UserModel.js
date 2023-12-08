@@ -35,7 +35,7 @@ class UserModel {
             return null;
         }
         else {
-            const [role] = await config.db.query('SELECT * FROM users_roles WHERE user_id = ?', [rows[0].id]);
+            const [role] = await config.db.query('SELECT * FROM users_roles WHERE user_id = ? AND soft_delet = 0', [rows[0].id]);
             rows[0].roles = role.map(role => roleIdConverter(role.role_id));
             return rows[0];
         }
@@ -47,7 +47,7 @@ class UserModel {
             return null;
         }
         else {
-            const [role] = await config.db.query('SELECT * FROM users_roles WHERE user_id = ?', [rows[0].id]);
+            const [role] = await config.db.query('SELECT * FROM users_roles WHERE user_id = ? AND soft_delete = 0', [rows[0].id]);
             rows[0].roles = role.map(role => roleIdConverter(role.role_id));
             return rows[0];
         }
@@ -57,7 +57,7 @@ class UserModel {
             SELECT id, name, picture
             FROM users
             WHERE name LIKE ? 
-            AND id IN (SELECT user_id FROM users_roles WHERE role_id = 3)
+            AND id IN (SELECT user_id FROM users_roles WHERE role_id = 3 AND soft_delete = 0)
             `;
         const [rows] = await config.db.query(sql, [`%${keyword}%`]);
         if (rows.length === 0) {
