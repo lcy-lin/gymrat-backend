@@ -77,6 +77,29 @@ class UserModel {
         }
         
     }
+    
+    static async updateRole(id, roles){
+        try{
+            const [existingRoles] = await config.db.query('SELECT * FROM users_roles WHERE user_id = ?', [id]);
+            const existingRoleIds = existingRoles.map(role => role.role_id);
+            await Promise.all(roles.map(async (role) => {
+                if (existingRoleIds.includes(role)) {
+                    await config.db.query('UPDATE users_roles SET soft_delete = 0 WHERE user_id = ? AND role_id = ?', [id, role]);
+                }
+                else {
+                    await config.db.query('INSERT INTO users_roles (user_id, role_id) VALUES (?, ?)', [id, role]);
+                }
+            }));
+            const rolesToDelete = existingRoleIds.filter((roleId) => !roles.includes(roleId));
+            await Promise.all(rolesToDelete.map(async (role) => {
+                await config.db.query('UPDATE users_roles SET soft_delete = 1 WHERE user_id = ? AND role_id = ?', [id, role]);
+            }));
+            return {success: true};
+        }
+        catch(error){
+            return {success: true};
+        }
+    }
     static async verifyPassword(password, storedPassword) {
         return bcrypt.compare(password, storedPassword);
     }

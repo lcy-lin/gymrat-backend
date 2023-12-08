@@ -212,13 +212,10 @@ class ActModel {
 
     static async updateActivity(actId, updatedData) {
         try {
-            // Extract tags from updatedData and remove it from updatedData
             const { tags, movements, ...updatedActivityData } = updatedData;
     
-            // Perform the necessary update query to update the activity
             await config.db.query('UPDATE activities SET ? WHERE id = ?', [updatedActivityData, actId]);
     
-            // Update tags associated with the activity
             const updateTagsRes = await ActModel.updateTags(tags, actId);
             if (!updateTagsRes.success) {
                 throw new Error(updateTagsRes.error);

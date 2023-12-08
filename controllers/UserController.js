@@ -177,6 +177,33 @@ class UserController {
             }
         }
     }
+    static async updateRole(req, res) {
+        try {
+            const token = check.authHeader(req.headers['authorization']);
+            if(token == null){
+                return res.status(403).json({ error: 'Client Error (No token) Response' });
+            }
+            const userId = req.params.id;
+            const { roles } = req.body;
+            if (roles == null || userId == null) {
+                return res.status(400).json({ error: 'Client Error Response' });
+            }
+            const updateRes = await UserModel.updateRole(Number(userId), roles);
+            if(updateRes.success == false){
+                throw new Error('Update Coach Failed');
+            }
+            return res.status(200).json({ data: { id: userId, roles: roles }}); 
+        }
+        catch (error) {
+            console.error(error);
+            if (error.name === 'JsonWebTokenError' || 'TokenExpiredError') {
+                return res.status(401).json({ error: 'Client Error (Wrong token) Response' });
+            }
+            else {
+                return res.status(500).json({ error: 'Internal Server Error' });
+            }
+        }
+    }
 }
 
 export default UserController;
