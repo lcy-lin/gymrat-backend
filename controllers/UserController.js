@@ -149,6 +149,30 @@ class UserController {
             }
         }
     }
+    static async students(req, res) {
+        try {
+            const token = check.authHeader(req.headers['authorization']);
+            if(token == null){
+                return res.status(403).json({ error: 'Client Error (No token) Response' });
+            }
+            const userId = req.params.id;
+            const userData = await UserModel.getStudentsByCoachId(userId);
+            if(userData.success == false){
+                throw new Error('Get Students Failed');
+            }
+            return res.status(200).json({ data: userData.data});
+        }
+        catch (error) {
+            console.error(error);
+            if (error.name === 'JsonWebTokenError' || 'TokenExpiredError') {
+                return res.status(401).json({ error: 'Client Error (Wrong token) Response' });
+            }
+            else {
+                return res.status(500).json({ error: 'Internal Server Error' });
+            }
+        }
+    }
+
     static async updateCoach(req, res) {
         try {
             const token = check.authHeader(req.headers['authorization']);

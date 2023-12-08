@@ -65,6 +65,19 @@ class UserModel {
         }
         return rows;
     }
+    static async getStudentsByCoachId(coachId){
+        try {
+            const sql = `SELECT id, name, picture FROM users WHERE coach_id = ?`;
+            const [rows] = await config.db.query(sql, [coachId]);
+            if (rows.length === 0) {
+                return {success: true, data: []};
+            }
+            return {success: true, data: rows};
+        }
+        catch(error){
+            return {success: true};
+        }
+    }
     static async updateCoach(id, coachId){
         try{
             const sql = `UPDATE users SET coach_id = ? WHERE id = ?`;
