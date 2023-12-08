@@ -35,7 +35,7 @@ class UserModel {
             return null;
         }
         else {
-            const [role] = await config.db.query('SELECT * FROM users_roles WHERE user_id = ? AND soft_delet = 0', [rows[0].id]);
+            const [role] = await config.db.query('SELECT * FROM users_roles WHERE user_id = ? AND soft_delete = 0', [rows[0].id]);
             rows[0].roles = role.map(role => roleIdConverter(role.role_id));
             return rows[0];
         }
