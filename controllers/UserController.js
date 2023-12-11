@@ -2,7 +2,6 @@ import UserModel from "../models/UserModel.js";
 import jwt from 'jsonwebtoken';
 import config from "../config.js";
 import check from "../utils/check.js";
-import { getFileStream } from '../utils/s3.js';
 
 class UserController {
 
@@ -90,7 +89,7 @@ class UserController {
 
             const token = check.authHeader(req.headers['authorization']);
             if(token == null){
-                return res.status(403).json({ error: 'Client Error (No token) Response' });
+                return res.status(401).json({ error: 'Client Error (No token) Response' });
             }
 
             const decoded = jwt.verify(token, process.env.ACCESS_TOKEN_SECRET);

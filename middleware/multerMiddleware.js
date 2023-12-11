@@ -32,8 +32,10 @@ function multerMiddleware(req, res, next) {
 
   upload(req, res, function (err) {
     if (err instanceof multer.MulterError) {
+      console.log(err);
       return res.status(400).json({ error: 'File upload error: ' + err.message });
     } else if (err) {
+      console.log(err);
       return res.status(500).json({ error: 'Internal Server Error' });
     }
     next();

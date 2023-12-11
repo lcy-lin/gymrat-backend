@@ -3,9 +3,12 @@ import jwt from 'jsonwebtoken';
 import config from '../config.js';
 import roleIdConverter from '../utils/roleIdConverter.js';
 import uploadFile from '../utils/s3.js';
-import { getFileStream } from '../utils/s3.js';
+import fs from 'fs';
+import util from 'util';
 
 class UserModel {
+    static unlinkFile = util.promisify(fs.unlink);
+
     static async checkEmail(email){
         const [checkEmailResults] = await config.db.query('SELECT * FROM users WHERE email = ?', [email]);
 
@@ -128,10 +131,12 @@ class UserModel {
             const sql = `UPDATE users SET picture = ? WHERE id = ?`;
             await config.db.query(sql, [picture.filename, id]);
             const result = await uploadFile(picture);
-
+            await this.unlinkFile(picture.path);
+            
             return { success: true, url: result.Location };
         }
         catch(error){
+            console.log(error);
             return {success: false, error: error};
         }
         
