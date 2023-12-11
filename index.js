@@ -6,6 +6,7 @@ import weightRoutes from './routes/weightRoutes.js';
 import calRoutes from './routes/calRoutes.js';
 import bodyRoutes from './routes/bodyRoutes.js';
 import dbMiddleware from './middleware/dbMiddleware.js';
+import multerMiddleware from './middleware/multerMiddleware.js';
 import cors from 'cors';
 const app = express();
 
@@ -14,7 +15,8 @@ app.use(bodyParser.json());
 app.use(express.json());
 app.use(dbMiddleware);
 app.use(cors());
-app.use('/api/:version/users', userRoutes);
+
+app.use('/api/:version/users', multerMiddleware, userRoutes);
 app.use('/api/:version/activities', actRoutes);
 app.use('/api/:version/weights', weightRoutes);
 app.use('/api/:version/cals', calRoutes);

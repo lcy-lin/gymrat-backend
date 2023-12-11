@@ -2,6 +2,8 @@ import bcrypt from 'bcrypt';
 import jwt from 'jsonwebtoken';
 import config from '../config.js';
 import roleIdConverter from '../utils/roleIdConverter.js';
+import uploadFile from '../utils/s3.js';
+
 class UserModel {
     static async checkEmail(email){
         const [checkEmailResults] = await config.db.query('SELECT * FROM users WHERE email = ?', [email]);
@@ -113,6 +115,20 @@ class UserModel {
             return {success: true};
         }
     }
+    static async updateProfilePicture(id, picture){
+        try{
+            const sql = `UPDATE users SET picture = ? WHERE id = ?`;
+            await config.db.query(sql, [picture.filename, id]);
+            const result = await uploadFile(picture);
+
+            return { success: true, url: result.Location };
+        }
+        catch(error){
+            return {success: false, error: error};
+        }
+        
+    }
+
     static async verifyPassword(password, storedPassword) {
         return bcrypt.compare(password, storedPassword);
     }

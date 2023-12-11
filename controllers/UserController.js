@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import config from "../config.js";
 import check from "../utils/check.js";
 
+
 class UserController {
 
     static async respondWithToken(res, userData) {
@@ -227,6 +228,37 @@ class UserController {
                 return res.status(500).json({ error: 'Internal Server Error' });
             }
         }
+    }
+    static async updateProfilePicture(req, res) {
+        try {
+            const token = check.authHeader(req.headers['authorization']);
+            if(token == null){
+                return res.status(403).json({ error: 'Client Error (No token) Response' });
+            }
+            const contentType = req.headers['content-type'];
+            if (!contentType || !contentType.includes('multipart/form-data')) {
+                return res.status(400).json({ error: 'Invalid Content-Type. Expecting multipart/form-data.' });
+            }
+            const userId = req.body.id;
+            const picture = req.file;
+            if (picture == null || userId == null) {
+                return res.status(400).json({ error: 'Client Error Response' });
+            }
+            const updateRes = await UserModel.updateProfilePicture(Number(userId), picture);
+            if(updateRes.success == false){
+                throw new Error('Update Profile Picture Failed');
+            }
+            return res.status(200).json({ data: { picture: updateRes.url} });  
+        } catch (error) {
+            console.error(error);
+            if (error.name === 'JsonWebTokenError' || 'TokenExpiredError') {
+                return res.status(401).json({ error: 'Client Error (Wrong token) Response' });
+            }
+            else {
+                return res.status(500).json({ error: 'Internal Server Error' });
+            }
+        }
+
     }
 }
 
