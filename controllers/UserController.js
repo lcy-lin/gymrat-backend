@@ -237,7 +237,7 @@ class UserController {
             if (!contentType || !contentType.includes('multipart/form-data')) {
                 return res.status(400).json({ error: 'Invalid Content-Type. Expecting multipart/form-data.' });
             }
-            const userId = req.body.id;
+            const userId = req.params.id;
             const picture = req.file;
             if (picture == null || userId == null) {
                 return res.status(400).json({ error: 'Client Error Response' });
