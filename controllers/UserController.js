@@ -2,7 +2,7 @@ import UserModel from "../models/UserModel.js";
 import jwt from 'jsonwebtoken';
 import config from "../config.js";
 import check from "../utils/check.js";
-
+import { getFileStream } from '../utils/s3.js';
 
 class UserController {
 
@@ -104,7 +104,6 @@ class UserController {
             }
             const isoDate = new Date(userData.created_at);
             const formattedDate = `${isoDate.getFullYear()}-${(isoDate.getMonth() + 1).toString().padStart(2, '0')}-${isoDate.getDate().toString().padStart(2, '0')} ${isoDate.getHours().toString().padStart(2, '0')}:${isoDate.getMinutes().toString().padStart(2, '0')}:${isoDate.getSeconds().toString().padStart(2, '0')}`;
-
             const response = {
                 data: {
                     user: {

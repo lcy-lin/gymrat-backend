@@ -3,6 +3,7 @@ import jwt from 'jsonwebtoken';
 import config from '../config.js';
 import roleIdConverter from '../utils/roleIdConverter.js';
 import uploadFile from '../utils/s3.js';
+import { getFileStream } from '../utils/s3.js';
 
 class UserModel {
     static async checkEmail(email){
@@ -43,17 +44,24 @@ class UserModel {
         }
         
     }
-    static async getUserById(id){
+    static async getUserById(id) {
         const [rows] = await config.db.query('SELECT * FROM users WHERE id = ?', [id]);
+      
         if (rows.length === 0) {
-            return null;
+          return null;
+        } else {
+          if (rows[0].picture) {
+            const pictureUrl = `https://gymrat-bucket.s3.ap-southeast-2.amazonaws.com/${rows[0].picture}`
+            rows[0].picture = pictureUrl;
+          }
+      
+          const [role] = await config.db.query('SELECT * FROM users_roles WHERE user_id = ? AND soft_delete = 0', [rows[0].id]);
+          rows[0].roles = role.map((role) => roleIdConverter(role.role_id));
+      
+          return rows[0];
         }
-        else {
-            const [role] = await config.db.query('SELECT * FROM users_roles WHERE user_id = ? AND soft_delete = 0', [rows[0].id]);
-            rows[0].roles = role.map(role => roleIdConverter(role.role_id));
-            return rows[0];
-        }
-    }
+      }
+      
     static async getCoachByKeyword(keyword){
         const sql = `
             SELECT id, name, picture
