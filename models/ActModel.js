@@ -100,6 +100,30 @@ class ActModel {
           return { success: false, error: 'Error retrieving activities' };
         }
     }
+    static async getPublicActRecords(page){
+        try{
+            const sql = `
+                SELECT a.id, a.user_id, a.description, a.publicity, DATE_FORMAT(a.created_at, '%Y-%m-%d %H:%i:%s') AS created_at, GROUP_CONCAT(t.name) AS tags,
+                    u.name, u.picture
+                FROM activities a
+                LEFT JOIN acts_tags at ON a.id = at.act_id AND at.soft_delete = 0
+                LEFT JOIN tags t ON at.tag_id = t.id
+                LEFT JOIN users u ON a.user_id = u.id
+                WHERE a.publicity = 1 AND a.soft_delete = 0
+                GROUP BY a.id
+                ORDER BY a.id DESC
+                LIMIT ? OFFSET ?`;
+            const [rows] = await config.db.query(sql, [10, (page - 1) * 10]);
+            rows.map((row) => {
+                row.tags = row.tags.split(',');
+            });
+            return {success: true, data: rows};
+        }
+        catch(error){
+            console.log(error);
+            return {success: false, error: error};
+        }
+    }
     static async getActByActId(actId) {
         try {
             const query = `
