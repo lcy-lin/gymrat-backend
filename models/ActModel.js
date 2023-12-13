@@ -66,7 +66,7 @@ class ActModel {
     }
     static async getActByUserId(category, userId, pub_only) {
         try {
-          let pubCondition = pub_only === 'true' ? 'AND a.publicity = 1' : '';
+          let pubCondition = pub_only === 1 ? 'AND a.publicity = 1' : '';
           let tagCondition = category.toLowerCase() === 'all' ? '' : 'AND t.name = ?';
       
           const query = `

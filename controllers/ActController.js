@@ -62,10 +62,11 @@ class ActController {
             }
             const category = req.query.category || 'all';
             const userId = req.query.user_id;
+            const pub_only = req.query.pub_only || 0;
             if (userId == null) {
                 return res.status(400).json({ error: 'Client Error Response' });
             }
-            const results = await ActModel.getActByUserId(category,userId);
+            const results = await ActModel.getActByUserId(category,userId, Number(pub_only));
             return res.status(200).json({
                 category: category,
                 activities: results,
