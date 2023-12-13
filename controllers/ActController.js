@@ -79,6 +79,29 @@ class ActController {
         }
         
     }
+    static async getStudentsActRecords(req, res) {
+        try {
+            const authRes = check.authenticateToken(req.headers);
+            if (authRes.status !== 200) {
+                return res.status(authRes.status).json({ error: authRes.error });
+            }
+            const {coachid} = req.params;
+            if (coachid == null) {
+                return res.status(400).json({ error: 'Client Error Response' });
+            }
+            const results = await ActModel.getStudentActRecordsByCoachId(coachid);
+            if(results.success === false){
+                throw new Error(results.error);
+            }
+            return res.status(200).json({
+                data: results.data,
+            });
+        }
+        catch (error) {
+            return res.status(500).json({ error: 'Internal Server Error' });
+        }
+    }
+
     static async getPublicActRecords(req, res) {
         try {
             const authRes = check.authenticateToken(req.headers);
